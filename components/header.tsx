@@ -14,17 +14,18 @@ const Header = () => {
   };
 
   return (
-    <header className="w-full flex h-14 items-center justify-between px-6  shrink-0">
+    <header className="w-full flex h-14 items-center justify-between px-6 mb-5 shrink-0">
       {/* Logo */}
-      <Link href="/" className="flex items-center space-x-2 mt-15">
+      <Link href="/" className="flex items-center space-x-2 mt-10">
         <Image
           src="/docChat-logo.svg"
           alt="docChat Logo"
-          width={70}
-          height={70}
-          priority={true}
-          className="w-[120px] h-auto"
+          width={10}
+          height={10}
+          priority={false}
+          className="w-[40px] h-auto"
         />
+        <span className="text-2xl font-bold text-gray-800">docChat</span>
       </Link>
 
       {/* Navigation and Actions */}
