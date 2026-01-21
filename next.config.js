@@ -10,14 +10,7 @@ const { withSentryConfig } = require("@sentry/nextjs");
 module.exports = withSentryConfig(nextConfig, {
   org: "minh-49",
   project: "askpdf",
-
   silent: !process.env.CI,
-
-  widenClientFileUpload: false,
-
-  hideSourceMaps: process.env.NODE_ENV === "production",
-
   tunnelRoute: "/monitoring",
-
-  disableLogger: true,
 });
+
