@@ -1,3 +1,4 @@
+import "server-only";
 import { Pinecone } from "@pinecone-database/pinecone";
 import { ChatOpenAI, OpenAIEmbeddings } from "@langchain/openai";
 import { ChatAnthropic } from "@langchain/anthropic";

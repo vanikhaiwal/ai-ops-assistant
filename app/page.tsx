@@ -68,6 +68,7 @@ export default function Home() {
           <div className="w-1/3 h-1/3 bg-gray-800 rounded-lg m-10 p-5 flex flex-col items-center justify-center">
            <h1 className="text-3xl text-gray-100">Get Started </h1>
            <p className="text-sm text-gray-100">Ready to transform your PDFs into valuable insights? Try it now!</p>
+            <GoToChatButton />
           </div>
 
           {/* FOOTER */}
