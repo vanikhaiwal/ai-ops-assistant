@@ -5,18 +5,15 @@ import {
   user_settings,
 } from "@/lib/db/schema";
 import { retrieval } from "@/lib/langchain";
-import { getUserSettings, updateUserSettings } from "@lib/account";
+import { getUserSettings } from "@/lib/account";
 import { Message } from "ai";
 import { auth } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
-import * as Sentry from "@sentry/nextjs";
 import { VALID_MODELS } from "@/constants/models";
-import { logger } from "@lib/logger";
+import { logger } from "@/lib/logger";
 import { eq } from "drizzle-orm";
 
-
 export const runtime = "nodejs";
-
 
 function validateModel(selectedModel?: string): string | undefined {
   if (!selectedModel) return undefined;
@@ -24,11 +21,12 @@ function validateModel(selectedModel?: string): string | undefined {
 }
 
 const formatMessages = (messages: Message[]) => {
-  const formattedMessages = messages.map(
-    (message) =>
-      `${message.role === "user" ? "Human" : "Assistant"}: ${message.content}`
-  );
-  return formattedMessages.join("/n");
+  return messages
+    .map(
+      (message) =>
+        `${message.role === "user" ? "Human" : "Assistant"}: ${message.content}`
+    )
+    .join("\n");
 };
 
 export async function POST(req: Request) {
@@ -48,12 +46,11 @@ export async function POST(req: Request) {
       apiKeys,
     } = await req.json();
 
-    // Check if users running out of free messages
     const userSettings = await getUserSettings();
     if (
       userSettings?.messageCount &&
       userSettings?.freeMessages &&
-      userSettings?.messageCount >= userSettings?.freeMessages
+      userSettings.messageCount >= userSettings.freeMessages
     ) {
       return NextResponse.json(
         { error: "Free messages limit reached" },
@@ -65,16 +62,15 @@ export async function POST(req: Request) {
     const previousMessages = messages.slice(0, -1);
     const chatHistory = formatMessages(previousMessages);
 
-    // Validate the selected model
     const validatedModel = validateModel(selectedModel);
     if (selectedModel && !validatedModel) {
-      logger.warn(`Invalid model received: ${selectedModel}. Using default.`);
+      logger.warn(`Invalid model received: ${selectedModel}`);
     }
 
     let count = 0;
     let sources: { content: string; pageNumber: number }[] = [];
 
-    const streamingtextResponse = await retrieval({
+    const streamingResponse = await retrieval({
       question: currentMessageContent,
       chatHistory,
       previousMessages,
@@ -91,23 +87,21 @@ export async function POST(req: Request) {
         },
         handleLLMEnd: async (output) => {
           count++;
-          if (count == 2) {
-            // save user message into db
+          if (count === 2) {
             await db.insert(_messages).values({
               chatId,
               content: currentMessageContent,
               role: "user",
             });
+
             await db
               .update(user_settings)
-              .set({
-                messageCount: messageCount + 1,
-              })
+              .set({ messageCount: messageCount + 1 })
               .where(eq(user_settings.userId, userId));
 
-            // save ai message into db
             const completion = output.generations[0][0].text;
-            const messageId = await db
+
+            const inserted = await db
               .insert(_messages)
               .values({
                 chatId,
@@ -115,12 +109,11 @@ export async function POST(req: Request) {
                 role: "system",
                 model: validatedModel,
               })
-              .returning({
-                insertedId: _messages.id,
-              });
+              .returning({ id: _messages.id });
+
             if (sources.length > 0) {
               await db.insert(_sources).values({
-                messageId: messageId[0].insertedId,
+                messageId: inserted[0].id,
                 chatId,
                 data: JSON.stringify(sources),
               });
@@ -130,18 +123,13 @@ export async function POST(req: Request) {
       },
     });
 
-    // Return a StreamingTextResponse, which can be consumed by the client
-    return streamingtextResponse;
+    return streamingResponse;
   } catch (err) {
-    Sentry.captureException("Error generating reply:", {
-      level: "error",
-      extra: {
-        error: err,
-      },
-    });
+    logger.error("Error generating reply", err);
     return NextResponse.json(
       { error: (err as Error).message },
       { status: 500 }
     );
   }
 }
+

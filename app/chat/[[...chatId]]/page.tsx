@@ -4,14 +4,17 @@ import PdfViewer from "@/components/pdf-viewer";
 import { getChat } from "./_actions/chat";
 
 interface ChatPageProps {
-  params: {
-    chatId: string[];
-  };
+  params: Promise<{
+    chatId?: string[];
+  }>;
 }
 
 export default async function ChatPage({ params }: ChatPageProps) {
   const { chatId } = await params;
-  const currentChat = chatId?.[0] ? await getChat(chatId[0]) : null;
+
+  const currentChat = chatId?.[0]
+    ? await getChat(chatId[0])
+    : null;
 
   return (
     <>
@@ -26,3 +29,4 @@ export default async function ChatPage({ params }: ChatPageProps) {
     </>
   );
 }
+
