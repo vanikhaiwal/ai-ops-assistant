@@ -5,12 +5,6 @@ const nextConfig = {
   },
 };
 
-const { withSentryConfig } = require("@sentry/nextjs");
+module.exports = nextConfig;
 
-module.exports = withSentryConfig(nextConfig, {
-  org: "minh-49",
-  project: "askpdf",
-  silent: !process.env.CI,
-  tunnelRoute: "/monitoring",
-});
 
